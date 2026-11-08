@@ -764,7 +764,23 @@ function formatKey(o){return [o.urlsafe,o.nopad,o.wrap].map(Number).join('')}
 function decodeB64(input){
   let s=input.trim(),mime=null;
   const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
-  if(m){mime=m[1]||null;s=s.slice(m[0].length)}
+  let plain=false;
+  if(m){
+    mime=m[1]||null;s=s.slice(m[0].length);
+    // 没有 ;base64 标记的 Data URI，载荷是百分号编码的原始数据（RFC 2397），不能按 Base64 解析
+    if(!/;\s*base64\s*$/i.test(m[2])&&(!mime||/^text\/|json|xml|javascript|svg/i.test(mime)||/[^A-Za-z0-9+\/=_\s%-]/.test(s)))plain=true;
+  }
+  if(plain){
+    const chunks=[];let total=0;
+    for(const part of s.split(/(%[0-9a-f]{2})/i)){
+      if(!part)continue;
+      const c=/^%[0-9a-f]{2}$/i.test(part)?Uint8Array.of(parseInt(part.slice(1),16)):encoder.encode(part);
+      chunks.push(c);total+=c.length;
+    }
+    const bytes=new Uint8Array(total);let off=0;
+    for(const c of chunks){bytes.set(c,off);off+=c.length}
+    return{bytes,mime};
+  }
   if(/%[0-9a-f]{2}/i.test(s)){try{s=decodeURIComponent(s)}catch(e){}}
   s=s.replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
   const bad=s.search(/[^A-Za-z0-9+/=]/);
