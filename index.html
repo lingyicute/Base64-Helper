@@ -251,6 +251,7 @@ html.vt-theme::view-transition-new(root){
 }
 .dropzone *{pointer-events:none}
 .dropzone:hover{border-color:var(--primary)}
+.dropzone:has(input:focus-visible){outline:2px solid var(--primary);outline-offset:2px}
 .dropzone:focus-within{outline:2px solid var(--primary);outline-offset:2px}
 .dropzone.dragover{border-color:var(--primary);background:var(--primary-container);color:var(--on-primary-container);transform:scale(1.01)}
 .dropzone strong{font:500 16px/24px var(--font)}
@@ -1077,11 +1078,18 @@ optionChips.forEach(c=>c.addEventListener('click',()=>{
 /* ============ 标签页 ============ */
 function selectTab(name){
   ['text','file'].forEach(n=>{
-    const sel=n===name;setAttr($('#tab-'+n),'aria-selected',sel);
+    const sel=n===name;setAttr($('#tab-'+n),'aria-selected',sel);$('#tab-'+n).tabIndex=sel?0:-1;
     const p=$('#panel-'+n);p.hidden=!sel;
     if(sel)replayEnter(p);
   });
 }
+$('#tab-file').tabIndex=-1;
+$('.tabs').addEventListener('keydown',e=>{
+  const keys=['ArrowLeft','ArrowRight','Home','End'];if(!keys.includes(e.key))return;
+  const names=['text','file'],cur=names.findIndex(n=>$('#tab-'+n).getAttribute('aria-selected')==='true');
+  const next=e.key==='Home'?0:e.key==='End'?names.length-1:(cur+(e.key==='ArrowRight'?1:-1)+names.length)%names.length;
+  e.preventDefault();selectTab(names[next]);$('#tab-'+names[next]).focus();
+});
 $('#tab-text').addEventListener('click',()=>selectTab('text'));
 $('#tab-file').addEventListener('click',()=>selectTab('file'));
 
@@ -1495,10 +1503,13 @@ colorPicker.addEventListener('change',commitSeed);
 hexInput.addEventListener('input',e=>{
   let v=e.target.value.trim();if(v&&v[0]!=='#')v='#'+v;
   const ok=/^#[0-9a-f]{6}$/i.test(v);
-  setFieldError(hexField,!ok&&v.length>1);
+  setFieldError(hexField,!ok&&v.length>1&&!/^#[0-9a-f]{3}$/i.test(v));
   if(ok)queueSeed(v);
 });
-hexInput.addEventListener('blur',()=>{commitSeed();hexInput.value=Theme.state.seed.toUpperCase();setFieldError(hexField,false)});
+// 支持 #abc 简写：输入过程中不生效（避免输入 #abcdef 时提前触发），失焦 / 回车时展开
+const expandShortHex=v=>{v=v.trim();if(v&&v[0]!=='#')v='#'+v;const m=/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(v);return m?'#'+m[1]+m[1]+m[2]+m[2]+m[3]+m[3]:null};
+hexInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();hexInput.blur()}});
+hexInput.addEventListener('blur',()=>{const short=expandShortHex(hexInput.value);if(short)queueSeed(short);commitSeed();hexInput.value=Theme.state.seed.toUpperCase();setFieldError(hexField,false)});
 $('#btnRandom').addEventListener('click',()=>{flushSeed();softApply(()=>Theme.setSeed(Theme.random()));Theme.persistSeed()});
 
 /* ============ 初始化 ============ */
