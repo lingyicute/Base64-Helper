@@ -721,16 +721,17 @@ function toast(msg){const s=$('#snackbar');s.textContent=msg;s.classList.add('sh
 async function copyText(t){
   try{await navigator.clipboard.writeText(t);return true}
   catch(e){
-    const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    const prev=document.activeElement,ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
     document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}
-    ta.remove();return ok;
+    ta.remove();if(prev&&prev.focus)try{prev.focus({preventScroll:true})}catch(_){}
+    return ok;
   }
 }
 function saveFile(data,name,mime){
   const blob=new Blob([data],{type:mime||'application/octet-stream'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),5000);
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 const supportStates=new WeakMap();
 function setSupport(el,text,isError){
