@@ -808,7 +808,7 @@ function decodeB64(input){
 
 /* ============ 类型探测 ============ */
 const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg','image/x-icon':'ico','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/zip':'zip','application/json':'json','text/plain':'txt','text/html':'html','text/css':'css','text/csv':'csv','text/javascript':'js','application/javascript':'js','application/xml':'xml','text/xml':'xml','audio/mpeg':'mp3','audio/wav':'wav','audio/ogg':'ogg','audio/mp4':'m4a','video/mp4':'mp4','video/webm':'webm','application/gzip':'gz','image/heic':'heic','video/quicktime':'mov','audio/flac':'flac','font/woff2':'woff2','font/woff':'woff','application/octet-stream':'bin'};
-function extOf(m){m=m.toLowerCase();return EXT[m]||(m.split('/')[1]||'bin').replace(/^x-/,'').replace(/\+.*$/,'').slice(0,5)}
+function extOf(m){m=m.toLowerCase();return EXT[m]||(m.split('/')[1]||'bin').replace(/^x-/,'').replace(/\+.*$/,'').replace(/[^a-z0-9]/g,'').slice(0,5)||'bin'}
 function kindOfMime(m){m=m.toLowerCase();if(m.startsWith('image/'))return'image';if(m.startsWith('audio/'))return'audio';if(m.startsWith('video/'))return'video';if(m.startsWith('text/')||/json|xml|javascript/.test(m))return'text';return'other'}
 function sniff(b){
   const n=b.length;
