@@ -705,7 +705,13 @@ let fileMode='encode';
 
 /* ============ 通用工具 ============ */
 function icon(id){const s=document.createElementNS(SVGNS,'svg');s.setAttribute('class','i');const u=document.createElementNS(SVGNS,'use');u.setAttribute('href','#i-'+id);s.appendChild(u);return s}
-function fmtBytes(n){if(n<1024)return n+' B';const u=['KB','MB','GB'];let i=-1;do{n/=1024;i++}while(n>=1024&&i<2);return n.toFixed(n>=100?0:n>=10?1:2)+' '+u[i]}
+function fmtBytes(n){
+  if(n<1024)return n+' B';
+  const u=['KB','MB','GB'];let i=-1,t;
+  // 四舍五入后若达到 1024（如 1023.99 KB）则进位到下一单位
+  do{n/=1024;i++;t=n.toFixed(n>=100?0:n>=10?1:2)}while(parseFloat(t)>=1024&&i<2);
+  return t+' '+u[i];
+}
 const numberFormatter=new Intl.NumberFormat('zh-CN');
 const fmtNum=n=>numberFormatter.format(n);
 function countChars(s){let n=0;for(const _ of s)n++;return n}
@@ -800,7 +806,7 @@ function decodeB64(input){
 }
 
 /* ============ 类型探测 ============ */
-const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg','image/x-icon':'ico','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/zip':'zip','application/json':'json','text/plain':'txt','text/html':'html','text/css':'css','text/csv':'csv','text/javascript':'js','application/javascript':'js','application/xml':'xml','text/xml':'xml','audio/mpeg':'mp3','audio/wav':'wav','audio/ogg':'ogg','audio/mp4':'m4a','video/mp4':'mp4','video/webm':'webm','application/gzip':'gz','font/woff2':'woff2','font/woff':'woff','application/octet-stream':'bin'};
+const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg','image/x-icon':'ico','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/zip':'zip','application/json':'json','text/plain':'txt','text/html':'html','text/css':'css','text/csv':'csv','text/javascript':'js','application/javascript':'js','application/xml':'xml','text/xml':'xml','audio/mpeg':'mp3','audio/wav':'wav','audio/ogg':'ogg','audio/mp4':'m4a','video/mp4':'mp4','video/webm':'webm','application/gzip':'gz','image/heic':'heic','video/quicktime':'mov','audio/flac':'flac','font/woff2':'woff2','font/woff':'woff','application/octet-stream':'bin'};
 function extOf(m){m=m.toLowerCase();return EXT[m]||(m.split('/')[1]||'bin').replace(/^x-/,'').replace(/\+.*$/,'').slice(0,5)}
 function kindOfMime(m){m=m.toLowerCase();if(m.startsWith('image/'))return'image';if(m.startsWith('audio/'))return'audio';if(m.startsWith('video/'))return'video';if(m.startsWith('text/')||/json|xml|javascript/.test(m))return'text';return'other'}
 function sniff(b){
@@ -815,7 +821,15 @@ function sniff(b){
   if(asc('RIFF')&&asc('WAVE',8))return T('audio/wav','wav','audio');
   if(asc('%PDF-'))return T('application/pdf','pdf','other');
   if(eq([0x00,0x00,0x01,0x00])&&n>22)return T('image/x-icon','ico','image');
-  if(asc('ftyp',4)){const brand=String.fromCharCode(...b.subarray(8,12));if(/^(avif|avis)$/.test(brand))return T('image/avif','avif','image');if(/^M4A/.test(brand))return T('audio/mp4','m4a','audio');return T('video/mp4','mp4','video')}
+  if(eq([0x42,0x4D])&&n>=26&&b[6]===0&&b[7]===0&&b[8]===0&&b[9]===0&&[12,40,52,56,64,108,124].includes((b[14]|(b[15]<<8)|(b[16]<<16)|(b[17]<<24))>>>0))return T('image/bmp','bmp','image');
+  if(asc('ftyp',4)){
+    const brand=String.fromCharCode(...b.subarray(8,12));
+    if(/^(avif|avis)$/.test(brand))return T('image/avif','avif','image');
+    if(/^(heic|heix|hevc|heim|heis|mif1|msf1)$/.test(brand))return T('image/heic','heic','image');
+    if(/^M4A/.test(brand))return T('audio/mp4','m4a','audio');
+    if(brand==='qt  ')return T('video/quicktime','mov','video');
+    return T('video/mp4','mp4','video');
+  }
   if(eq([0x1A,0x45,0xDF,0xA3]))return T('video/webm','webm','video');
   if(asc('OggS'))return T('audio/ogg','ogg','audio');
   if(asc('fLaC'))return T('audio/flac','flac','audio');
@@ -1270,10 +1284,17 @@ $('#encDl').addEventListener('click',()=>{if(enc.out&&enc.file){saveFile(enc.out
 const dec={fileText:null,srcName:'',bytes:null,info:null,nameEdited:false,reader:null,lastInput:null,pending:false};
 const decIn=$('#decIn'),decProgress=$('#decProgress'),decResult=$('#decResult'),decName=$('#decName');
 const decPreview=$('#decPreview'),decField=$('#decField'),decSupport=$('#decSupport'),decDownload=$('#decDownload');
+const KNOWN_EXT=new Set(Object.values(EXT).concat(['jpeg','htm','tar','7z','rar','sqlite','doc','docx','xls','xlsx','ppt','pptx','apk','exe','dmg','iso','ttf','otf','wasm','md','yml','yaml','log','tiff','tif','mkv','avi','aac','opus']));
 function suggestName(info){
   let base=dec.srcName?dec.srcName.replace(/\.(txt|b64|base64|text)$/i,'').replace(/\.(txt|b64|base64|text)$/i,''):'';
   if(!base)return 'decoded.'+info.ext;
-  return /\.[A-Za-z0-9]{1,6}$/.test(base)?base:base+'.'+info.ext;
+  // 仅当原有“扩展名”确实像扩展名时才保留（避免 report.v2 这类名字漏掉真正的扩展名）
+  const m=base.match(/\.([A-Za-z0-9]{1,6})$/);
+  if(m){
+    const e=m[1].toLowerCase();
+    if(e===info.ext||info.ext==='bin'||KNOWN_EXT.has(e))return base;
+  }
+  return base+'.'+info.ext;
 }
 function runDec(){
   const src=dec.fileText!==null?dec.fileText:decIn.value;
