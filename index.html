@@ -1391,7 +1391,8 @@ decIn.addEventListener('input',()=>{if(dec.fileText!==null||!$('#decCard').hidde
 decName.addEventListener('input',()=>{dec.nameEdited=true});
 $('#decDownload').addEventListener('click',()=>{
   if(!dec.bytes)return;
-  const name=decName.value.trim().replace(/[\\/:*?"<>|]/g,'_')||('decoded.'+dec.info.ext);
+  // 去掉路径分隔符、控制字符，以及 Windows 不允许的结尾点 / 空格
+  const name=decName.value.trim().replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g,'_').replace(/[. ]+$/,'')||('decoded.'+dec.info.ext);
   saveFile(dec.bytes,name,dec.info.mime);toast('已开始下载 '+name);
 });
 segHandlers.fileMode=v=>{
