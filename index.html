@@ -1531,7 +1531,8 @@ colorPicker.addEventListener('change',commitSeed);
 hexInput.addEventListener('input',e=>{
   let v=e.target.value.trim();if(v&&v[0]!=='#')v='#'+v;
   const ok=/^#[0-9a-f]{6}$/i.test(v);
-  setFieldError(hexField,!ok&&v.length>1&&!/^#[0-9a-f]{3}$/i.test(v));
+  // 仅在出现非法字符时报错；输入到一半的合法前缀（如 #6750）不应提前变红
+  setFieldError(hexField,v.length>1&&!/^#[0-9a-f]{0,6}$/i.test(v));
   if(ok)queueSeed(v);
 });
 // 支持 #abc 简写：输入过程中不生效（避免输入 #abcdef 时提前触发），失焦 / 回车时展开
