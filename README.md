@@ -16,4 +16,4 @@ H5 Base64 Decoder & Encoder — 单文件、纯前端、数据不离开浏览器
 
 ## 许可
 
-见 [LICENSE](LICENSE)。
+[AGPL-3.0](LICENSE)
