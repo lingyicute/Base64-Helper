@@ -1261,7 +1261,10 @@ function loadEncFile(file){
   resetEnc();enc.file=file;
   const thumb=$('#encThumb');
   if(file.type.startsWith('image/')&&file.size<30*1024*1024){
-    enc.thumbUrl=URL.createObjectURL(file);const im=document.createElement('img');im.src=enc.thumbUrl;im.alt='';thumb.appendChild(im);
+    enc.thumbUrl=URL.createObjectURL(file);const im=document.createElement('img');im.alt='';
+    // 浏览器无法解码的图片（如 HEIC / TIFF）回退为图标，而不是显示破图
+    im.onerror=()=>{if(enc.file===file)thumb.replaceChildren(icon('image'))};
+    im.src=enc.thumbUrl;thumb.appendChild(im);
   }else thumb.appendChild(icon(file.type.startsWith('audio/')?'music':file.type.startsWith('video/')?'video':'file'));
   $('#encName').textContent=file.name;$('#encName').title=file.name;
   $('#encMeta').textContent=fmtBytes(file.size)+' · '+(file.type||'未知类型');
