@@ -836,11 +836,12 @@ function sniff(b){
   if(asc('%PDF-'))return T('application/pdf','pdf','other');
   if(eq([0x00,0x00,0x01,0x00])&&n>22)return T('image/x-icon','ico','image');
   if(eq([0x42,0x4D])&&n>=26&&b[6]===0&&b[7]===0&&b[8]===0&&b[9]===0&&[12,40,52,56,64,108,124].includes((b[14]|(b[15]<<8)|(b[16]<<16)|(b[17]<<24))>>>0))return T('image/bmp','bmp','image');
-  if(asc('ftyp',4)){
+  if(asc('RIFF')&&asc('AVI ',8))return T('video/x-msvideo','avi','video');
+  if(n>=12&&asc('ftyp',4)){
     const brand=String.fromCharCode(...b.subarray(8,12));
     if(/^(avif|avis)$/.test(brand))return T('image/avif','avif','image');
     if(/^(heic|heix|hevc|heim|heis|mif1|msf1)$/.test(brand))return T('image/heic','heic','image');
-    if(/^M4A/.test(brand))return T('audio/mp4','m4a','audio');
+    if(/^M4[ABP]/.test(brand))return T('audio/mp4','m4a','audio');
     if(brand==='qt  ')return T('video/quicktime','mov','video');
     return T('video/mp4','mp4','video');
   }
@@ -848,7 +849,10 @@ function sniff(b){
   if(asc('OggS'))return T('audio/ogg','ogg','audio');
   if(asc('fLaC'))return T('audio/flac','flac','audio');
   if(asc('ID3')&&b[3]>=2&&b[3]<=4&&b[4]===0)return T('audio/mpeg','mp3','audio');
-  if(n>2&&b[0]===0xFF&&(b[1]&0xE0)===0xE0&&(b[1]&0x06)!==0)return T('audio/mpeg','mp3','audio');
+  // ADTS AAC：同步字 FFF + layer 00
+  if(n>=7&&b[0]===0xFF&&(b[1]&0xF6)===0xF0&&((b[2]>>2)&0x0F)<13)return T('audio/aac','aac','audio');
+  // MPEG 音频帧头：除同步字外还校验版本 / Layer / 码率 / 采样率，避免把 UTF-16LE BOM（FF FE）等误判为 MP3
+  if(n>=4&&b[0]===0xFF&&(b[1]&0xE0)===0xE0&&(b[1]&0x18)!==0x08&&((b[1]&0x06)===0x02||(b[1]&0x06)===0x04)&&(b[2]>>4)!==0x0F&&((b[2]>>2)&3)!==3)return T('audio/mpeg','mp3','audio');
   if(eq([0x50,0x4B,0x03,0x04]))return T('application/zip','zip','other');
   if(eq([0x1F,0x8B]))return T('application/gzip','gz','other');
   if(eq([0x37,0x7A,0xBC,0xAF,0x27,0x1C]))return T('application/x-7z-compressed','7z','other');
@@ -861,8 +865,14 @@ function sniff(b){
   return null;
 }
 function tryUtf8(bytes){
+  // 带 BOM 的 UTF-16 文本也按文本处理（TextDecoder 会自动去掉 BOM）
+  let label='utf-8';
+  if(bytes.length>=2&&bytes.length%2===0){
+    if(bytes[0]===0xFF&&bytes[1]===0xFE)label='utf-16le';
+    else if(bytes[0]===0xFE&&bytes[1]===0xFF)label='utf-16be';
+  }
   try{
-    const s=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+    const s=new TextDecoder(label,{fatal:true}).decode(bytes);
     if(/[\u0000-\u0008\u000E-\u001F\u007F]/.test(s))return null;
     return s;
   }catch(e){return null}
