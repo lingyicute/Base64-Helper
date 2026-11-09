@@ -241,7 +241,7 @@ html.vt-theme::view-transition-new(root){
 .preview{margin-top:12px;border-radius:16px;background:var(--surface-container);overflow:hidden;display:flex;justify-content:center;align-items:center}
 .preview:empty{display:none}
 .preview img,.preview video{display:block;max-width:100%;max-height:340px;object-fit:contain}
-.preview audio{width:100%;margin:12px}
+.preview audio{width:calc(100% - 24px);margin:12px}
 .preview pre{margin:0;padding:14px 16px;width:100%;max-height:200px;overflow:auto;font:400 12.5px/1.6 var(--mono);white-space:pre-wrap;word-break:break-all;color:var(--on-surface-variant)}
 
 /* Dropzone / 文件 */
@@ -1127,6 +1127,8 @@ function clearPreview(c){
   if(c._url){URL.revokeObjectURL(c._url);c._url=null}
   if(c.firstChild)c.replaceChildren();
 }
+// 切换标签页 / 转换方向后，被隐藏面板里的音视频不应继续在后台播放
+function pauseMedia(){$$('audio,video').forEach(m=>{try{m.pause()}catch(e){}})}
 function setPreview(c,bytes,info,withText){
   clearPreview(c);
   const k=info.kind;
@@ -1207,6 +1209,7 @@ function selectTab(name){
     const p=$('#panel-'+n);p.hidden=!sel;
     if(sel)replayEnter(p);
   });
+  pauseMedia();
 }
 $('#tab-file').tabIndex=-1;
 $('.tabs').addEventListener('keydown',e=>{
@@ -1513,7 +1516,7 @@ $('#decDownload').addEventListener('click',()=>{
 });
 segHandlers.fileMode=v=>{
   if(v===fileMode)return;
-  fileMode=v;$('#fileEnc').hidden=v!=='encode';$('#fileDec').hidden=v!=='decode';$('#fileChips').hidden=v!=='encode';
+  fileMode=v;pauseMedia();$('#fileEnc').hidden=v!=='encode';$('#fileDec').hidden=v!=='decode';$('#fileChips').hidden=v!=='encode';
   replayEnter($('#'+(v==='encode'?'fileEnc':'fileDec')));
 };
 
