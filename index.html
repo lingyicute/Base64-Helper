@@ -636,7 +636,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
         <div class="fc-info"><div class="fc-name" id="encName"></div><div class="fc-meta" id="encMeta"></div></div>
         <button class="icon-btn" id="encRemove" type="button" aria-label="移除文件" title="移除文件"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
-      <div class="progress" id="encProgress" hidden><i></i></div>
+      <div class="progress" id="encProgress" role="progressbar" aria-label="文件处理进度" aria-valuemin="0" aria-valuemax="100" hidden><i></i></div>
       <div class="field filled" id="encField">
         <textarea id="encOut" class="mono" readonly spellcheck="false" placeholder="选择文件后，Base64 结果将显示在这里"></textarea>
         <label for="encOut">输出 · Base64</label>
@@ -661,7 +661,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
         <div class="fc-info"><div class="fc-name" id="decSrcName"></div><div class="fc-meta" id="decSrcMeta"></div></div>
         <button class="icon-btn" id="decRemove" type="button" aria-label="移除文件" title="移除文件"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
-      <div class="progress" id="decProgress" hidden><i></i></div>
+      <div class="progress" id="decProgress" role="progressbar" aria-label="文件处理进度" aria-valuemin="0" aria-valuemax="100" hidden><i></i></div>
       <div class="field outlined" id="decField">
         <textarea id="decIn" class="mono" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="在此粘贴 Base64 字符串或 data:image/png;base64,… 形式的 Data URI" style="min-height:160px"></textarea>
         <label for="decIn">或粘贴 · Base64 / Data URI</label>
@@ -1264,13 +1264,16 @@ addEventListener('drop',e=>{
 });
 function setProgress(bar,ratio){
   bar.hidden=false;bar.classList.remove('indeterminate');
-  const fill=bar.firstElementChild,width=Math.round(ratio*100)+'%';
+  const fill=bar.firstElementChild,pct=Math.round(ratio*100),width=pct+'%';
+  setAttr(bar,'aria-valuenow',pct);
   if(fill.style.width!==width)fill.style.width=width;
 }
 
 // 后台线程处理大数据时显示不确定进度条（.progress.indeterminate）
 function setBusy(bar,on){
   const fill=bar.firstElementChild;
+  // 不确定进度条不应带有 aria-valuenow
+  bar.removeAttribute('aria-valuenow');
   if(on){fill.style.width='';bar.classList.add('indeterminate');bar.hidden=false}
   else{bar.classList.remove('indeterminate');bar.hidden=true}
 }
