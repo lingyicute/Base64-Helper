@@ -1484,6 +1484,8 @@ function runDec(){
   dec.bytes=null;dec.info=null;
   decDownload.disabled=true;
   if(!src){
+    // 输入被清空后，下一次解码应重新建议文件名，而不是沿用上一次手改的名字
+    dec.nameEdited=false;
     cancelTask('file-decode');dec.pending=false;setAttr(decField,'aria-busy',false);setBusy(decProgress,false);
     clearPreview(decPreview);decResult.hidden=true;setFieldError(decField,false);
     setSupport(decSupport,dec.fileText===''?'所选文件是空的，没有可解码的内容':'',dec.fileText==='');return;
