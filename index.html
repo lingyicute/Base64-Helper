@@ -721,6 +721,9 @@ function fmtBytes(n){
   do{n/=1024;i++;t=n.toFixed(n>=100?0:n>=10?1:2)}while(parseFloat(t)>=1024&&i<3);
   return t+' '+u[i];
 }
+// 浏览器字符串长度上限约 2^29 个字符：文件 → Base64 会膨胀 4/3，读取 Base64 文本则按字符计
+const MAX_ENC_BYTES=380*1024*1024,MAX_DEC_BYTES=500*1024*1024;
+const tooLargeMsg=(size,max)=>'文件过大（'+fmtBytes(size)+'），浏览器无法一次性读入内存，请拆分后再处理（上限约 '+fmtBytes(max)+'）';
 const numberFormatter=new Intl.NumberFormat('zh-CN');
 const fmtNum=n=>numberFormatter.format(n);
 function countChars(s){let n=0;for(const _ of s)n++;return n}
@@ -1333,6 +1336,7 @@ function loadEncFile(file){
   $('#encName').textContent=file.name;$('#encName').title=file.name;
   $('#encMeta').textContent=fmtBytes(file.size)+' · '+(file.type||'未知类型');
   $('#encCard').hidden=false;
+  if(file.size>MAX_ENC_BYTES){setFieldError(encField,true);setSupport(encSupport,tooLargeMsg(file.size,MAX_ENC_BYTES),true);return}
   if(file.size>50*1024*1024)toast('文件较大，处理可能需要一些时间');
   if(file.size===0){enc.raw='';renderEnc();return}
   const fr=new FileReader();enc.reader=fr;setProgress(encProgress,0);
@@ -1444,6 +1448,7 @@ function loadDecFile(file){
   $('#decSrcName').textContent=file.name;$('#decSrcName').title=file.name;
   $('#decSrcMeta').textContent=fmtBytes(file.size)+' · 作为 Base64 文本读取';
   $('#decCard').hidden=false;
+  if(file.size>MAX_DEC_BYTES){setFieldError(decField,true);setSupport(decSupport,tooLargeMsg(file.size,MAX_DEC_BYTES),true);return}
   if(file.size>50*1024*1024)toast('文件较大，处理可能需要一些时间');
   dec.pending=true;setAttr(decField,'aria-busy',true);
   const fr=new FileReader();dec.reader=fr;setProgress(decProgress,0);
