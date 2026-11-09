@@ -841,7 +841,8 @@ function decodeB64(input){
   const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
   if(m){
     mime=m[1].trim().toLowerCase()||null;s=s.slice(m[0].length);
-    let marked=/;\s*base64\s*$/i.test(m[2]);
+    // 严格来说 base64 必须是最后一个参数，但 "data:text/plain;base64;charset=utf-8,…" 这类顺序同样应被识别
+    let marked=m[2].split(';').some(p=>p.trim().toLowerCase()==='base64');
     // "data:base64,xxx"（漏写媒体类型）：base64 被误当成了 MIME 类型
     if(mime==='base64'&&!m[2]){mime=null;marked=true}
     // 媒体类型必须形如 type/subtype，否则忽略，避免把无意义的值当成文件类型显示
