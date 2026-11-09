@@ -1045,7 +1045,8 @@ function needsBackgroundTask(request){
 }
 function dispatchTask(channel,request,resolve,reject){
   const small=!needsBackgroundTask(request);
-  if(small)cancelTask(channel);
+  // 同一通道的新请求会使旧请求作废；若旧请求正占用后台线程，立即终止以免浪费算力
+  cancelTask(channel);
   const task={id:++taskSequence,channel,request,resolve,reject};
   latestTasks.set(channel,task);queuedTasks.delete(channel);
   if(small){performLocalTask(task);return}
