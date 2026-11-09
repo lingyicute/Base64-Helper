@@ -184,3 +184,24 @@ test('safeFileName：非法字符、结尾点与 Windows 设备名', () => {
   assert.equal(core.safeFileName('com1', 'x'), '_com1');
   assert.equal(core.safeFileName('console.log', 'x'), 'console.log');
 });
+
+test('Worker 源码只依赖 helpers 列表中的函数（在隔离上下文中实际运行）', () => {
+  const vm = require('node:vm');
+  const names = /const helpers=\[([^\]]+)\]/.exec(html)[1].split(',').map((s) => s.trim());
+  const fns = new Function(source.replace(/return \{[^}]*\};$/, '') + '\nreturn {' + names.join(',') + '};')();
+  const handler = between('self.onmessage=function', 'self.postMessage({ready:true});');
+  const code = '"use strict";\nconst encoder=new TextEncoder();\nconst EXT=' + JSON.stringify(core.EXT) + ';\n'
+    + names.map((n) => fns[n].toString()).join('\n') + '\n' + handler;
+  const posted = [];
+  const self = { postMessage: (m) => posted.push(m) };
+  vm.runInNewContext(code, { self, TextEncoder, TextDecoder, btoa, atob });
+  const run = (request) => { self.onmessage({ data: { id: posted.length + 1, request } }); return posted[posted.length - 1]; };
+
+  assert.equal(run({ type: 'encode', input: '你好', opts: { urlsafe: true, nopad: true }, counts: true }).result.out, '5L2g5aW9');
+  const d = run({ type: 'decode', input: 'data:image/png;base64,iVBORw0KGgo=', counts: true });
+  assert.equal(d.result.info.mime, 'image/png');
+  assert.equal(run({ type: 'format', input: 'QUJD', opts: { datauri: true }, mime: 'text/plain' }).result.out, 'data:text/plain;base64,QUJD');
+  const bad = run({ type: 'decode', input: 'QU*D', counts: true });
+  assert.match(bad.error, /第 3 个字符/);
+  assert.equal(bad.inputChars, 4);
+});
