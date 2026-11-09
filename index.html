@@ -1086,8 +1086,10 @@ syncAppBar();
 
 /* ============ 分段按钮 ============ */
 const segHandlers={};
-function setSeg(seg,val){$$('button',seg).forEach(b=>setAttr(b,'aria-checked',b.dataset.value===val))}
+function setSeg(seg,val){$$('button',seg).forEach(b=>{const on=b.dataset.value===val;setAttr(b,'aria-checked',on);b.tabIndex=on?0:-1})}
 $$('.seg').forEach(seg=>{
+  // radiogroup 只有当前项在 Tab 顺序中，方向键负责在组内移动
+  const cur=$('[aria-checked=true]',seg)||$('button',seg);setSeg(seg,cur.dataset.value);
   seg.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     const v=b.dataset.value;setSeg(seg,v);
