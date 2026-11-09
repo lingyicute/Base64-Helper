@@ -845,6 +845,7 @@ function sniff(b){
   if(asc('RIFF')&&asc('WEBP',8))return T('image/webp','webp','image');
   if(asc('RIFF')&&asc('WAVE',8))return T('audio/wav','wav','audio');
   if(asc('%PDF-'))return T('application/pdf','pdf','other');
+  if(eq([0x49,0x49,0x2A,0x00])||eq([0x4D,0x4D,0x00,0x2A]))return T('image/tiff','tiff','image');
   if(eq([0x00,0x00,0x01,0x00])&&n>22)return T('image/x-icon','ico','image');
   if(eq([0x42,0x4D])&&n>=26&&b[6]===0&&b[7]===0&&b[8]===0&&b[9]===0&&[12,40,52,56,64,108,124].includes((b[14]|(b[15]<<8)|(b[16]<<16)|(b[17]<<24))>>>0))return T('image/bmp','bmp','image');
   if(asc('RIFF')&&asc('AVI ',8))return T('video/x-msvideo','avi','video');
