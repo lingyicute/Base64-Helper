@@ -757,11 +757,15 @@ function setSupport(el,text,isError){
   state.span.textContent=text;state.text=text;
 }
 // 超长文本只在 textarea 中显示前 PREVIEW_LIMIT 个字符，避免卡死界面；复制 / 下载仍使用完整内容
-function clipPreview(s){
-  if(s.length<=PREVIEW_LIMIT)return s;
-  let end=PREVIEW_LIMIT;const c=s.charCodeAt(end-1);
+// 截取前 n 个 UTF-16 单元，但不把一个代理对（如 emoji）从中间切开
+function sliceSafe(s,n){
+  if(s.length<=n)return s;
+  let end=n;const c=s.charCodeAt(end-1);
   if(c>=0xD800&&c<=0xDBFF)end--;
-  return s.slice(0,end)+CLIP_NOTE;
+  return s.slice(0,end);
+}
+function clipPreview(s){
+  return s.length<=PREVIEW_LIMIT?s:sliceSafe(s,PREVIEW_LIMIT)+CLIP_NOTE;
 }
 function setFieldError(field,on){field.classList.toggle('error',!!on)}
 function setAttr(el,name,value){value=String(value);if(el.getAttribute(name)!==value)el.setAttribute(name,value)}
@@ -1094,7 +1098,7 @@ function setPreview(c,bytes,info,withText){
     el.src=url;c.appendChild(el);
   }else if(withText&&info.text!==null&&info.text!==''){
     const pre=document.createElement('pre');
-    pre.textContent=info.text.length>2000?info.text.slice(0,2000)+'\n…':info.text;c.appendChild(pre);
+    pre.textContent=info.text.length>2000?sliceSafe(info.text,2000)+'\n…':info.text;c.appendChild(pre);
   }
 }
 
