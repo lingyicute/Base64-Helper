@@ -1427,6 +1427,7 @@ function loadDecFile(file){
   $('#decSrcName').textContent=file.name;$('#decSrcName').title=file.name;
   $('#decSrcMeta').textContent=fmtBytes(file.size)+' · 作为 Base64 文本读取';
   $('#decCard').hidden=false;
+  if(file.size>50*1024*1024)toast('文件较大，处理可能需要一些时间');
   dec.pending=true;setAttr(decField,'aria-busy',true);
   const fr=new FileReader();dec.reader=fr;setProgress(decProgress,0);
   fr.onprogress=e=>{if(dec.reader===fr&&e.lengthComputable)setProgress(decProgress,e.loaded/e.total)};
