@@ -805,7 +805,7 @@ function decodeB64(input){
   let s=input.trim(),mime=null,plain=false,lenient=false;
   const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
   if(m){
-    mime=m[1]||null;s=s.slice(m[0].length);
+    mime=m[1].trim().toLowerCase()||null;s=s.slice(m[0].length);
     // 没有 ;base64 标记的 Data URI，载荷是百分号编码的原始数据（RFC 2397）
     if(!/;\s*base64\s*$/i.test(m[2])){
       if(!mime||/^text\/|json|xml|javascript|svg/i.test(mime)||/[^A-Za-z0-9+\/=_\s%-]/.test(s))plain=true;
