@@ -769,26 +769,19 @@ function formatB64(s,o){
   return s;
 }
 function formatKey(o){return [o.urlsafe,o.nopad,o.wrap].map(Number).join('')}
-function decodeB64(input){
-  let s=input.trim(),mime=null;
-  const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
-  let plain=false;
-  if(m){
-    mime=m[1]||null;s=s.slice(m[0].length);
-    // 没有 ;base64 标记的 Data URI，载荷是百分号编码的原始数据（RFC 2397），不能按 Base64 解析
-    if(!/;\s*base64\s*$/i.test(m[2])&&(!mime||/^text\/|json|xml|javascript|svg/i.test(mime)||/[^A-Za-z0-9+\/=_\s%-]/.test(s)))plain=true;
+// 按 RFC 2397 解码百分号编码的 Data URI 载荷：%XX 还原为字节，其余字符按 UTF-8 编码
+function percentToBytes(s){
+  const chunks=[];let total=0;
+  for(const part of s.split(/(%[0-9a-f]{2})/i)){
+    if(!part)continue;
+    const c=/^%[0-9a-f]{2}$/i.test(part)?Uint8Array.of(parseInt(part.slice(1),16)):encoder.encode(part);
+    chunks.push(c);total+=c.length;
   }
-  if(plain){
-    const chunks=[];let total=0;
-    for(const part of s.split(/(%[0-9a-f]{2})/i)){
-      if(!part)continue;
-      const c=/^%[0-9a-f]{2}$/i.test(part)?Uint8Array.of(parseInt(part.slice(1),16)):encoder.encode(part);
-      chunks.push(c);total+=c.length;
-    }
-    const bytes=new Uint8Array(total);let off=0;
-    for(const c of chunks){bytes.set(c,off);off+=c.length}
-    return{bytes,mime};
-  }
+  const bytes=new Uint8Array(total);let off=0;
+  for(const c of chunks){bytes.set(c,off);off+=c.length}
+  return bytes;
+}
+function b64PayloadToBytes(s){
   if(/%[0-9a-f]{2}/i.test(s)){try{s=decodeURIComponent(s)}catch(e){}}
   s=s.replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
   const bad=s.search(/[^A-Za-z0-9+/=]/);
@@ -798,13 +791,29 @@ function decodeB64(input){
   if(core.length%4===1)throw new Error('Base64 长度无效，数据可能不完整或被截断');
   while(core.length%4)core+='=';
   if(typeof Uint8Array.fromBase64==='function'){
-    try{return{bytes:Uint8Array.fromBase64(core,{lastChunkHandling:'loose'}),mime}}
+    try{return Uint8Array.fromBase64(core,{lastChunkHandling:'loose'})}
     catch(e){throw new Error('无法解码：数据格式不正确')}
   }
   let bin;try{bin=atob(core)}catch(e){throw new Error('无法解码：数据格式不正确')}
   const bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return{bytes,mime};
+  return bytes;
+}
+function decodeB64(input){
+  let s=input.trim(),mime=null,plain=false,lenient=false;
+  const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
+  if(m){
+    mime=m[1]||null;s=s.slice(m[0].length);
+    // 没有 ;base64 标记的 Data URI，载荷是百分号编码的原始数据（RFC 2397）
+    if(!/;\s*base64\s*$/i.test(m[2])){
+      if(!mime||/^text\/|json|xml|javascript|svg/i.test(mime)||/[^A-Za-z0-9+\/=_\s%-]/.test(s))plain=true;
+      // 其它类型（如 image/png,%89PNG…）：先按用户可能漏写 ;base64 尝试，失败再回退到百分号解码
+      else lenient=true;
+    }
+  }
+  if(plain)return{bytes:percentToBytes(s),mime};
+  try{return{bytes:b64PayloadToBytes(s),mime}}
+  catch(e){if(lenient)return{bytes:percentToBytes(s),mime};throw e}
 }
 
 /* ============ 类型探测 ============ */
@@ -937,7 +946,7 @@ function getProcessor(){
   if(processor||workerUnavailable)return processor;
   try{
     if(!processorSource){
-      const helpers=[bytesToB64,formatB64,decodeB64,extOf,kindOfMime,sniff,tryUtf8,analyze,countChars,computeTask];
+      const helpers=[bytesToB64,formatB64,percentToBytes,b64PayloadToBytes,decodeB64,extOf,kindOfMime,sniff,tryUtf8,analyze,countChars,computeTask];
       processorSource='"use strict";\nconst encoder=new TextEncoder();\nconst EXT='+JSON.stringify(EXT)+';\n'+
         helpers.map(fn=>fn.toString()).join('\n')+`\n
         self.onmessage=function(event){
