@@ -868,7 +868,8 @@ const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
   'application/vnd.android.package-archive':'apk','application/epub+zip':'epub','application/xhtml+xml':'xhtml','text/x-python':'py','text/calendar':'ics','application/postscript':'ps',
   'image/vnd.adobe.photoshop':'psd','application/vnd.ms-fontobject':'eot','text/tab-separated-values':'tsv','application/x-msdownload':'exe','application/vnd.microsoft.portable-executable':'exe',
-  'application/x-elf':'elf','application/vnd.apple.mpegurl':'m3u8','audio/x-ms-wma':'wma'};
+  'application/x-elf':'elf','application/vnd.apple.mpegurl':'m3u8','audio/x-ms-wma':'wma',
+  'application/java-archive':'jar','application/vnd.oasis.opendocument.text':'odt','application/vnd.oasis.opendocument.spreadsheet':'ods','application/vnd.oasis.opendocument.presentation':'odp'};
 function extOf(m){
   m=String(m).toLowerCase().split(';')[0].trim();
   // 必须用 hasOwnProperty：否则 constructor / toString / __proto__ 这类 MIME 会命中 Object.prototype
