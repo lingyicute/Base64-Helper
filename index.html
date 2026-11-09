@@ -1141,6 +1141,7 @@ optionChips.forEach(c=>c.addEventListener('click',()=>{
 
 /* ============ 标签页 ============ */
 function selectTab(name){
+  if($('#tab-'+name).getAttribute('aria-selected')==='true')return;
   ['text','file'].forEach(n=>{
     const sel=n===name;setAttr($('#tab-'+n),'aria-selected',sel);$('#tab-'+n).tabIndex=sel?0:-1;
     const p=$('#panel-'+n);p.hidden=!sel;
