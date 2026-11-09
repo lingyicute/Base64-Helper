@@ -858,7 +858,10 @@ const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'
   'video/ogg':'ogv','video/x-matroska':'mkv','video/x-msvideo':'avi','video/3gpp':'3gp','application/x-zip-compressed':'zip','application/x-gzip':'gz','application/x-7z-compressed':'7z',
   'application/vnd.rar':'rar','application/x-rar-compressed':'rar','application/vnd.sqlite3':'sqlite','application/x-tar':'tar','font/ttf':'ttf','font/otf':'otf','application/wasm':'wasm','application/rtf':'rtf',
   'text/markdown':'md','application/yaml':'yaml','text/yaml':'yaml','application/msword':'doc','application/vnd.ms-excel':'xls','application/vnd.ms-powerpoint':'ppt',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx'};
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
+  'application/vnd.android.package-archive':'apk','application/epub+zip':'epub','application/xhtml+xml':'xhtml','text/x-python':'py','text/calendar':'ics','application/postscript':'ps',
+  'image/vnd.adobe.photoshop':'psd','application/vnd.ms-fontobject':'eot','text/tab-separated-values':'tsv','application/x-msdownload':'exe','application/vnd.microsoft.portable-executable':'exe',
+  'application/x-elf':'elf','application/vnd.apple.mpegurl':'m3u8','audio/x-ms-wma':'wma'};
 function extOf(m){
   m=String(m).toLowerCase().split(';')[0].trim();
   // 必须用 hasOwnProperty：否则 constructor / toString / __proto__ 这类 MIME 会命中 Object.prototype
@@ -866,7 +869,11 @@ function extOf(m){
   let sub=m.split('/')[1]||'';
   // application/ld+json、application/atom+xml 这类结构化后缀应取 + 之后的部分
   if(sub.indexOf('+')>=0)sub=sub.slice(sub.lastIndexOf('+')+1);
-  return sub.replace(/^x-/,'').replace(/[^a-z0-9]/g,'').slice(0,5)||'bin';
+  // 厂商私有类型（vnd.*）无法可靠推断扩展名；过长的子类型硬截断只会得到 "vndms"、"wwwfo" 这样的假扩展名
+  const fallback=m.startsWith('text/')?'txt':'bin';
+  if(/^vnd\./.test(sub))return fallback;
+  sub=sub.replace(/^x-/,'').replace(/[^a-z0-9]/g,'');
+  return sub&&sub.length<=5?sub:fallback;
 }
 function kindOfMime(m){m=m.toLowerCase();if(m.startsWith('image/'))return'image';if(m.startsWith('audio/'))return'audio';if(m.startsWith('video/'))return'video';if(m.startsWith('text/')||/(?:json|xml|javascript)$/.test(m))return'text';return'other'}
 function sniff(b){
