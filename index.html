@@ -108,6 +108,7 @@ html.vt-theme::view-transition-new(root){
 .theme-panel{
   position:fixed;top:68px;right:16px;z-index:60;width:min(344px,calc(100vw - 32px));
   background:var(--surface-container-high);color:var(--on-surface);border-radius:28px;box-shadow:var(--elev-3);padding:20px 20px 22px;
+  max-height:calc(100vh - 84px);max-height:calc(100dvh - 84px);overflow-y:auto;overscroll-behavior:contain;
   transform-origin:top right;opacity:0;visibility:hidden;transform:scale(.92) translateY(-8px);
   transition:opacity .2s var(--ease),transform .25s var(--ease),visibility 0s .25s;
 }
