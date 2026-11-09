@@ -1321,7 +1321,7 @@ function loadEncFile(file){
   fr.onprogress=e=>{if(enc.reader===fr&&e.lengthComputable)setProgress(encProgress,e.loaded/e.total)};
   fr.onload=()=>{
     if(enc.reader!==fr)return;
-    const r=fr.result;enc.raw=r.slice(r.indexOf(',')+1);enc.reader=null;
+    const r=fr.result;const mark=r.indexOf(';base64,');enc.raw=r.slice(mark>=0?mark+8:r.indexOf(',')+1);enc.reader=null;
     enc.notifyReady=true;encProgress.hidden=true;renderEnc();
   };
   fr.onerror=()=>{
