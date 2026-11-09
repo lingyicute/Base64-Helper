@@ -834,15 +834,24 @@ function decodeB64(input){
   if(s.length>=2&&(s[0]==='"'||s[0]==="'")&&s[s.length-1]===s[0])s=s.slice(1,-1).trim();
   // PEM 封装（-----BEGIN …----- / -----END …-----）：只解码正文，否则边界行会被当成 Base64 字符悄悄解出乱码
   // 块前后允许带说明文字（openssl 输出的 Bag Attributes、证书链里的注释等），这些文字同样不属于正文
-  const begins=s.match(/-----BEGIN [^-\r\n]+-----/g);
+  const begins=s.match(/-----BEGIN [^\r\n]+?-----/g);
   if(begins||/^-----BEGIN /.test(s)){
     if(begins&&begins.length>1)throw new Error('检测到多个 PEM 块，请一次只粘贴一个');
-    const pem=s.match(/-----BEGIN ([^-\r\n]+)-----([\s\S]*?)-----END ([^-\r\n]+)-----/);
+    // 标签允许含单个连字符（RFC 7468，如 PRIVACY-ENHANCED MESSAGE），因此用惰性匹配而不是排除 \"-\"
+    const pem=s.match(/-----BEGIN ([^\r\n]+?)-----([\s\S]*?)-----END ([^\r\n]+?)-----/);
     if(!pem)throw new Error('PEM 数据不完整：缺少 -----END …----- 结束行');
     if(pem[1]!==pem[3])throw new Error('PEM 起止标签不一致：BEGIN '+pem[1]+' / END '+pem[3]);
     const armor=/^PGP /.test(pem[1]);
     // RFC 1421 的 "Proc-Type: …" 之类头部行不属于 Base64 正文；PGP 装甲末尾的 "=XXXX" 是 CRC24 校验行
-    return{bytes:b64PayloadToBytes(pem[2].split(/\r?\n/).filter(l=>!/^[A-Za-z][A-Za-z0-9-]*:/.test(l)&&!(armor&&/^=[A-Za-z0-9+/]{4}$/.test(l.trim()))).join('\n')),mime:null};
+    // 头部可以折叠成多行（续行以空白开头），这些续行同样不属于正文
+    let inHeader=false;
+    const body=pem[2].split(/\r?\n/).filter(l=>{
+      if(/^[A-Za-z][A-Za-z0-9-]*:/.test(l)){inHeader=true;return false}
+      if(inHeader&&/^[ \t]+\S/.test(l))return false;
+      inHeader=false;
+      return !(armor&&/^=[A-Za-z0-9+/]{4}$/.test(l.trim()));
+    });
+    return{bytes:b64PayloadToBytes(body.join('\n')),mime:null};
   }
   const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
   if(m){

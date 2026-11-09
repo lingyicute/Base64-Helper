@@ -205,3 +205,12 @@ test('Worker 源码只依赖 helpers 列表中的函数（在隔离上下文中�
   assert.match(bad.error, /第 3 个字符/);
   assert.equal(bad.inputChars, 4);
 });
+
+test('PEM：标签可含连字符，折叠的头部续行不进入正文', () => {
+  const pe = '-----BEGIN PRIVACY-ENHANCED MESSAGE-----\nQUJD\n-----END PRIVACY-ENHANCED MESSAGE-----';
+  assert.deepEqual(bytes(core.decodeB64(pe)), Array.from(enc('ABC')));
+  assert.throws(() => core.decodeB64(pe + '\n' + pe), /多个 PEM/);
+  const folded = '-----BEGIN RSA PRIVATE KEY-----\r\nProc-Type: 4,ENCRYPTED\r\nDEK-Info: AES-128-CBC,\r\n 0123456789ABCDEF\r\n\r\nQUJD\r\n-----END RSA PRIVATE KEY-----';
+  assert.deepEqual(bytes(core.decodeB64(folded)), Array.from(enc('ABC')));
+  assert.deepEqual(bytes(core.decodeB64('-----BEGIN X-----QUJD-----END X-----')), Array.from(enc('ABC')));
+});
