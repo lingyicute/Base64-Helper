@@ -242,3 +242,18 @@ test('safeFileName：设备名变体与超长文件名', () => {
   assert.equal(core.safeFileName('a'.repeat(300), 'x').length, 200);
   assert.equal(core.safeFileName('ok.txt', 'x'), 'ok.txt');
 });
+
+test('sniff：区分 Matroska 与 WebM，识别 3GPP；无声明类型的 HTML / XML', () => {
+  const ebml = (doc) => Uint8Array.from([0x1a, 0x45, 0xdf, 0xa3, 0x93, 0x42, 0x82, 0x88, ...Buffer.from(doc)]);
+  assert.deepEqual([core.analyze(ebml('matroska'), null).mime, core.analyze(ebml('matroska'), null).ext], ['video/x-matroska', 'mkv']);
+  assert.equal(core.analyze(ebml('webm'), null).mime, 'video/webm');
+  const ftyp = (brand) => Uint8Array.from([0, 0, 0, 20, 0x66, 0x74, 0x79, 0x70, ...Buffer.from(brand), 0, 0, 0, 0]);
+  assert.equal(core.analyze(ftyp('3gp4'), null).ext, '3gp');
+  assert.equal(core.analyze(ftyp('3g2a'), null).ext, '3g2');
+  assert.equal(core.analyze(ftyp('mp42'), null).ext, 'mp4');
+  assert.deepEqual([core.analyze(enc('<!DOCTYPE html>\n<p>x'), null).mime, core.analyze(enc(' <HTML lang=en>'), null).ext], ['text/html', 'html']);
+  assert.equal(core.analyze(enc('<?xml version="1.0"?><a/>'), null).ext, 'xml');
+  assert.equal(core.analyze(enc('<htmlish>'), null).mime, 'text/plain');
+  assert.equal(core.analyze(enc('\u001b[31mred\u001b[0m'), null).mime, 'text/plain');
+  assert.equal(core.analyze(Uint8Array.of(0, 1, 2), null).mime, 'application/octet-stream');
+});
