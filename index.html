@@ -954,14 +954,27 @@ function tryUtf8(bytes){
 }
 function analyze(bytes,hint){
   let t=sniff(bytes),text=null;
+  if(hint)hint=String(hint).toLowerCase();
   if(!t||t.mime==='image/svg+xml')text=tryUtf8(bytes);
+  // 文件头只能区分容器：docx / epub / apk 本质上都是 zip，m4a 与 mp4、webm 音频与视频、ogg 音频与视频也共用文件头。
+  // 此时以 Data URI 声明的类型为准，否则 .docx 会被保存成 .zip
+  if(t&&hint&&hint!==t.mime){
+    const refine={
+      'application/zip':/^application\/(vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.oasis\.opendocument\.(text|spreadsheet|presentation)|epub\+zip|vnd\.android\.package-archive|java-archive)$/,
+      'video/mp4':/^audio\/(mp4|x-m4a|m4a)$/,
+      'video/webm':/^audio\/webm$/,
+      'audio/ogg':/^video\/ogg$/
+    }[t.mime];
+    if(refine&&refine.test(hint))t={mime:hint,ext:extOf(hint),kind:kindOfMime(hint)};
+  }
   if(!t){
     if(text!==null){
       let mime='text/plain';
-      if(hint&&/^(text\/|application\/(json|xml|javascript))/i.test(hint))mime=hint.toLowerCase();
+      // 声明为文本类（含 +json / +xml 后缀）或 rtf / yaml 等纯文本格式时沿用声明的类型，保留正确的扩展名
+      if(hint&&(kindOfMime(hint)==='text'||/^application\/(rtf|postscript|yaml|x-yaml|x-sh|sql|toml)$/.test(hint)))mime=hint;
       else if(/^\s*[\[{]/.test(text)&&text.length<2e6){try{JSON.parse(text);mime='application/json'}catch(e){}}
       t={mime,ext:extOf(mime),kind:'text'};
-    }else if(hint){t={mime:hint.toLowerCase(),ext:extOf(hint),kind:kindOfMime(hint)}}
+    }else if(hint){t={mime:hint,ext:extOf(hint),kind:kindOfMime(hint)}}
     else t={mime:'application/octet-stream',ext:'bin',kind:'other'};
   }
   return Object.assign({},t,{text});
