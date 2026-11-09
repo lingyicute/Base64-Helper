@@ -1419,6 +1419,7 @@ $('#decDownload').addEventListener('click',()=>{
   saveFile(dec.bytes,name,dec.info.mime);toast('已开始下载 '+name);
 });
 segHandlers.fileMode=v=>{
+  if(v===fileMode)return;
   fileMode=v;$('#fileEnc').hidden=v!=='encode';$('#fileDec').hidden=v!=='decode';$('#fileChips').hidden=v!=='encode';
   replayEnter($('#'+(v==='encode'?'fileEnc':'fileDec')));
 };
