@@ -9,6 +9,8 @@ H5 Base64 Decoder & Encoder — 单文件、纯前端、数据不离开浏览器
 - 智能解码：自动识别 Data URI（含百分号编码形式）、URL 安全字符、空白与缺失的填充
 - 大数据在本地 Blob Worker 中处理，不阻塞界面
 - Material You 风格动态主题色，深色 / 浅色 / 跟随系统
+- 通过内置 CSP（`connect-src 'none'`）与 `no-referrer` 策略，从浏览器层面禁止页面发起网络请求，确保数据只在本地处理
+- 文件类型探测覆盖常见图片、音视频、压缩包、字体、WebAssembly 等格式
 
 ## 使用
 
