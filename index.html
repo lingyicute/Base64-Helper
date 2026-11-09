@@ -744,12 +744,21 @@ function saveFile(data,name,mime){
   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
-// 去掉路径分隔符、控制字符，以及 Windows 不允许的结尾点 / 空格；CON、NUL 等设备名加下划线前缀
+// 去掉路径分隔符、控制字符，以及 Windows 不允许的结尾点 / 空格；CON、NUL 等设备名（含 "CON .txt"、"COM¹"）加下划线前缀；
+// 文件名按 UTF-8 计最多 MAX_NAME_BYTES 字节（多数文件系统的上限是 255 字节），超长时保留扩展名
 function safeFileName(name,fallback){
-  let n=String(name).trim().replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g,'_').replace(/[. ]+$/,'');
-  if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i.test(n))n='_'+n;
+  let n=String(name).trim().replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g,'_');
+  if(encoder.encode(n).length>MAX_NAME_BYTES){
+    const ext=(/\.[^.\s]{1,16}$/.exec(n)||[''])[0],limit=MAX_NAME_BYTES-encoder.encode(ext).length;
+    let base='',used=0;
+    for(const ch of n.slice(0,n.length-ext.length)){const b=encoder.encode(ch).length;if(used+b>limit)break;base+=ch;used+=b}
+    n=base+ext;
+  }
+  n=n.replace(/[. ]+$/,'');
+  if(/^(con|prn|aux|nul|com[1-9\u00b9\u00b2\u00b3]|lpt[1-9\u00b9\u00b2\u00b3]) *(\.|$)/i.test(n))n='_'+n;
   return n||fallback;
 }
+const MAX_NAME_BYTES=200;
 const supportStates=new WeakMap();
 function setSupport(el,text,isError){
   text=text||'';isError=!!isError;
