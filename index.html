@@ -1156,7 +1156,8 @@ function runText(){
   textState.lastInput=val;textState.lastKey=key;
   textState.out='';textState.bytes=null;textState.info=null;
   textOut.placeholder=enc?'编码结果将显示在这里':'解码结果将显示在这里';
-  if(!val){
+  // 解码方向下仅含空白的输入视为空，避免显示“0 字符的文本”并启用下载
+  if(!val||(!enc&&!val.trim())){
     cancelTask('text');textState.pending=false;
     textOut.value='';setFieldError(outField,false);clearPreview(textPreview);
     setSupport(inSupport,enc?'0 字符 · 0 B':'0 字符');setSupport(outSupport,'');
