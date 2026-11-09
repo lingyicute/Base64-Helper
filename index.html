@@ -744,6 +744,12 @@ function saveFile(data,name,mime){
   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
+// 去掉路径分隔符、控制字符，以及 Windows 不允许的结尾点 / 空格；CON、NUL 等设备名加下划线前缀
+function safeFileName(name,fallback){
+  let n=String(name).trim().replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g,'_').replace(/[. ]+$/,'');
+  if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i.test(n))n='_'+n;
+  return n||fallback;
+}
 const supportStates=new WeakMap();
 function setSupport(el,text,isError){
   text=text||'';isError=!!isError;
@@ -1502,8 +1508,7 @@ decIn.addEventListener('input',()=>{if(dec.fileText!==null||!$('#decCard').hidde
 decName.addEventListener('input',()=>{dec.nameEdited=true});
 $('#decDownload').addEventListener('click',()=>{
   if(!dec.bytes)return;
-  // 去掉路径分隔符、控制字符，以及 Windows 不允许的结尾点 / 空格
-  const name=decName.value.trim().replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g,'_').replace(/[. ]+$/,'')||('decoded.'+dec.info.ext);
+  const name=safeFileName(decName.value,'decoded.'+dec.info.ext);
   saveFile(dec.bytes,name,dec.info.mime);toast('已开始下载 '+name);
 });
 segHandlers.fileMode=v=>{
