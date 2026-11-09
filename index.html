@@ -1350,7 +1350,8 @@ function runDec(){
   decDownload.disabled=true;
   if(!src){
     cancelTask('file-decode');dec.pending=false;setAttr(decField,'aria-busy',false);setBusy(decProgress,false);
-    clearPreview(decPreview);decResult.hidden=true;setFieldError(decField,false);setSupport(decSupport,'');return;
+    clearPreview(decPreview);decResult.hidden=true;setFieldError(decField,false);
+    setSupport(decSupport,dec.fileText===''?'所选文件是空的，没有可解码的内容':'',dec.fileText==='');return;
   }
   dec.pending=true;setAttr(decField,'aria-busy',true);
   const request={type:'decode',input:src,skipEmpty:true};
