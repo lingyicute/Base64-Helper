@@ -229,3 +229,16 @@ test('解码：还原 JSON 转义，剥离 CSS url() 与裸 base64, 前缀', () 
   // 无法按 JSON 解析的反斜杠仍然给出明确错误
   assert.throws(() => core.decodeB64('"QU\\xJD"'), /不是合法的 Base64 字符/);
 });
+
+test('safeFileName：设备名变体与超长文件名', () => {
+  assert.equal(core.safeFileName('CON .txt', 'x'), '_CON .txt');
+  assert.equal(core.safeFileName('com\u00b9.log', 'x'), '_com\u00b9.log');
+  assert.equal(core.safeFileName('console.txt', 'x'), 'console.txt');
+  assert.equal(core.safeFileName('a/b\\c:d', 'x'), 'a_b_c_d');
+  assert.equal(core.safeFileName(' .. ', 'fallback'), 'fallback');
+  const long = core.safeFileName('文'.repeat(300) + '.png', 'x');
+  assert.ok(long.endsWith('.png'));
+  assert.ok(Buffer.byteLength(long) <= 200);
+  assert.equal(core.safeFileName('a'.repeat(300), 'x').length, 200);
+  assert.equal(core.safeFileName('ok.txt', 'x'), 'ok.txt');
+});
