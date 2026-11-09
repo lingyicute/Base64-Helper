@@ -788,6 +788,7 @@ function b64PayloadToBytes(s){
   if(bad>=0)throw new Error('第 '+(bad+1)+' 个字符「'+s[bad]+'」不是合法的 Base64 字符（已忽略空白）');
   if(/=[^=]/.test(s)||/={3,}/.test(s))throw new Error('填充符「=」只能出现在末尾，且最多两个');
   let core=s.replace(/=+$/,'');
+  if(!core&&s)throw new Error('只有填充符「=」，没有可解码的数据');
   if(core.length%4===1)throw new Error('Base64 长度无效，数据可能不完整或被截断');
   while(core.length%4)core+='=';
   if(typeof Uint8Array.fromBase64==='function'){
