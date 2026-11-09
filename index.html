@@ -716,9 +716,9 @@ let fileMode='encode';
 function icon(id){const s=document.createElementNS(SVGNS,'svg');s.setAttribute('class','i');const u=document.createElementNS(SVGNS,'use');u.setAttribute('href','#i-'+id);s.appendChild(u);return s}
 function fmtBytes(n){
   if(n<1024)return n+' B';
-  const u=['KB','MB','GB'];let i=-1,t;
+  const u=['KB','MB','GB','TB'];let i=-1,t;
   // 四舍五入后若达到 1024（如 1023.99 KB）则进位到下一单位
-  do{n/=1024;i++;t=n.toFixed(n>=100?0:n>=10?1:2)}while(parseFloat(t)>=1024&&i<2);
+  do{n/=1024;i++;t=n.toFixed(n>=100?0:n>=10?1:2)}while(parseFloat(t)>=1024&&i<3);
   return t+' '+u[i];
 }
 const numberFormatter=new Intl.NumberFormat('zh-CN');
