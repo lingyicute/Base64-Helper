@@ -830,8 +830,18 @@ function b64PayloadToBytes(s){
 }
 function decodeB64(input){
   let s=input.trim(),mime=null,plain=false,lenient=false;
+  // CSS 里的 url(...) / url("...") 包装
+  const css=/^url\(([\s\S]*)\)$/i.exec(s);
+  if(css)s=css[1].trim();
   // 从 JSON / HTML / CSS 里复制出来的值常带一对引号
-  if(s.length>=2&&(s[0]==='"'||s[0]==="'")&&s[s.length-1]===s[0])s=s.slice(1,-1).trim();
+  if(s.length>=2&&(s[0]==='"'||s[0]==="'")&&s[s.length-1]===s[0]){
+    let inner=null;
+    // JSON 字符串中的 "/"、换行常被转义（例如 PHP 的 json_encode 会输出 \/），先按 JSON 还原
+    if(s[0]==='"'&&s.indexOf('\\')>=0){try{const v=JSON.parse(s);if(typeof v==='string')inner=v}catch(e){}}
+    s=(inner!==null?inner:s.slice(1,-1)).trim();
+  }
+  // 漏写 data: 前缀、只剩 "base64,xxx" 的情况
+  if(/^base64,/i.test(s))s=s.slice(7);
   // PEM 封装（-----BEGIN …----- / -----END …-----）：只解码正文，否则边界行会被当成 Base64 字符悄悄解出乱码
   // 块前后允许带说明文字（openssl 输出的 Bag Attributes、证书链里的注释等），这些文字同样不属于正文
   const begins=s.match(/-----BEGIN [^\r\n]+?-----/g);

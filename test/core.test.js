@@ -214,3 +214,18 @@ test('PEM：标签可含连字符，折叠的头部续行不进入正文', () =>
   assert.deepEqual(bytes(core.decodeB64(folded)), Array.from(enc('ABC')));
   assert.deepEqual(bytes(core.decodeB64('-----BEGIN X-----QUJD-----END X-----')), Array.from(enc('ABC')));
 });
+
+test('解码：还原 JSON 转义，剥离 CSS url() 与裸 base64, 前缀', () => {
+  const abcdef = Array.from(enc('ABCDEF'));
+  assert.deepEqual(bytes(core.decodeB64('"QUJD\\nREVG"')), abcdef);
+  const slash = Buffer.from([0xfb, 0xff, 0xbf]).toString('base64'); // "+/+/"
+  assert.equal(slash, '+/+/');
+  assert.deepEqual(bytes(core.decodeB64('"+\\/+\\/"')), [0xfb, 0xff, 0xbf]);
+  assert.deepEqual(bytes(core.decodeB64('"QUJD\nREVG"')), abcdef);
+  assert.deepEqual(core.decodeB64('url("data:text/plain;base64,QUJD")'), { bytes: enc('ABC'), mime: 'text/plain' });
+  assert.deepEqual(core.decodeB64("url( 'data:text/plain;base64,QUJD' )"), { bytes: enc('ABC'), mime: 'text/plain' });
+  assert.deepEqual(bytes(core.decodeB64('url(QUJD)')), Array.from(enc('ABC')));
+  assert.deepEqual(bytes(core.decodeB64('base64,QUJD')), Array.from(enc('ABC')));
+  // 无法按 JSON 解析的反斜杠仍然给出明确错误
+  assert.throws(() => core.decodeB64('"QU\\xJD"'), /不是合法的 Base64 字符/);
+});
