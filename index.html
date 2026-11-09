@@ -1092,9 +1092,12 @@ $$('.seg').forEach(seg=>{
     const h=segHandlers[seg.dataset.seg];if(h)h(v,b,e);
   });
   seg.addEventListener('keydown',e=>{
-    if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+    // radiogroup 约定：上 / 下 与 左 / 右 等价；阻止默认行为以免页面跟着滚动
+    const fwd=e.key==='ArrowRight'||e.key==='ArrowDown',back=e.key==='ArrowLeft'||e.key==='ArrowUp';
+    if(!fwd&&!back)return;
+    e.preventDefault();
     const btns=$$('button',seg),i=btns.findIndex(b=>b.getAttribute('aria-checked')==='true');
-    const nb=btns[(i+(e.key==='ArrowRight'?1:-1)+btns.length)%btns.length];nb.focus();nb.click();
+    const nb=btns[(i+(fwd?1:-1)+btns.length)%btns.length];nb.focus();nb.click();
   });
 });
 
