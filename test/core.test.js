@@ -137,3 +137,11 @@ test('computeTask：空白输入在 skipEmpty 下视为空', () => {
   assert.equal(r.byteLength, 6);
   assert.equal(r.inputChars, 2);
 });
+
+test('PEM：块前后可带说明文字，PGP 装甲的 CRC 行被忽略，标签不一致时报错', () => {
+  const body = '-----BEGIN CERTIFICATE-----\nQUJD\nREVG\n-----END CERTIFICATE-----';
+  assert.deepEqual(bytes(core.decodeB64('Bag Attributes\n  friendlyName: x\n' + body + '\nsome trailing note')), Array.from(enc('ABCDEF')));
+  const pgp = '-----BEGIN PGP MESSAGE-----\nVersion: x\n\nQUJD\n=abcd\n-----END PGP MESSAGE-----';
+  assert.deepEqual(bytes(core.decodeB64(pgp)), Array.from(enc('ABC')));
+  assert.throws(() => core.decodeB64('-----BEGIN A-----\nQUJD\n-----END B-----'), /标签不一致/);
+});
