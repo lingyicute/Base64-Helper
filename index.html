@@ -922,6 +922,12 @@ function sniff(b){
   if(asc('ustar',257))return T('application/x-tar','tar','other');
   if(asc('MThd')&&n>=14&&b[4]===0&&b[5]===0&&b[6]===0&&b[7]===6)return T('audio/midi','mid','other');
   if(asc('FLV')&&n>=9&&b[3]===1)return T('video/x-flv','flv','other');
+  if(eq([0x7F,0x45,0x4C,0x46]))return T('application/x-elf','elf','other');
+  // PE（Windows 可执行文件）：MZ 头 + e_lfanew 指向的 "PE\0\0" 签名，避免把以 MZ 开头的普通文本误判
+  if(asc('MZ')&&n>=64){const pe=(b[60]|(b[61]<<8)|(b[62]<<16)|(b[63]<<24))>>>0;if(pe<=n-4&&eq([0x50,0x45,0x00,0x00],pe))return T('application/vnd.microsoft.portable-executable','exe','other')}
+  // sfnt 字体：TrueType（00 01 00 00）/ OpenType（OTTO）后紧跟的表数量应在合理范围内
+  if((eq([0x00,0x01,0x00,0x00])||asc('OTTO'))&&n>=12){const tables=(b[4]<<8)|b[5];if(tables>=1&&tables<=64)return b[0]===0x4F?T('font/otf','otf','other'):T('font/ttf','ttf','other')}
+  if(asc('8BPS')&&n>=6&&b[4]===0&&b[5]===1)return T('image/vnd.adobe.photoshop','psd','other');
   const head=new TextDecoder('utf-8').decode(b.subarray(0,512));
   if(/^\uFEFF?\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)?(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(head))return T('image/svg+xml','svg','image');
   return null;
