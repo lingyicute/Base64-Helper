@@ -152,3 +152,19 @@ test('解码：去掉外层引号，base64 标记可位于任意参数位置', (
   assert.deepEqual(bytes(core.decodeB64('data:text/plain;base64;charset=utf-8,QUJD')), Array.from(enc('ABC')));
   assert.deepEqual(bytes(core.decodeB64('data:text/plain;charset=utf-8,"x"')), Array.from(enc('"x"')));
 });
+
+test('analyze：容器格式沿用声明的类型，文本类沿用声明的扩展名', () => {
+  const zip = Uint8Array.of(0x50, 0x4b, 3, 4, 0, 0, 0, 0);
+  const docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  assert.equal(core.analyze(zip, docx).ext, 'docx');
+  assert.equal(core.analyze(zip, 'APPLICATION/EPUB+ZIP').ext, 'epub');
+  // 无关的声明类型不能覆盖文件头
+  assert.equal(core.analyze(zip, 'image/png').mime, 'application/zip');
+  const ftyp = Uint8Array.from([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0]);
+  assert.equal(core.analyze(ftyp, null).mime, 'video/mp4');
+  const m4a = core.analyze(ftyp, 'audio/mp4');
+  assert.deepEqual([m4a.mime, m4a.ext, m4a.kind], ['audio/mp4', 'm4a', 'audio']);
+  assert.equal(core.analyze(enc('{\\rtf1 hi}'), 'application/rtf').ext, 'rtf');
+  assert.equal(core.analyze(enc('{"a":1}'), 'application/ld+json').ext, 'json');
+  assert.equal(core.analyze(enc('hello'), 'application/pdf').mime, 'text/plain');
+});
