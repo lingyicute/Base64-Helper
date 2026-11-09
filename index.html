@@ -828,8 +828,13 @@ function decodeB64(input){
   const m=s.match(/^data:([^;,]*)((?:;[^;,]*)*),/i);
   if(m){
     mime=m[1].trim().toLowerCase()||null;s=s.slice(m[0].length);
+    let marked=/;\s*base64\s*$/i.test(m[2]);
+    // "data:base64,xxx"（漏写媒体类型）：base64 被误当成了 MIME 类型
+    if(mime==='base64'&&!m[2]){mime=null;marked=true}
+    // 媒体类型必须形如 type/subtype，否则忽略，避免把无意义的值当成文件类型显示
+    else if(mime&&!/^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/.test(mime))mime=null;
     // 没有 ;base64 标记的 Data URI，载荷是百分号编码的原始数据（RFC 2397）
-    if(!/;\s*base64\s*$/i.test(m[2])){
+    if(!marked){
       if(!mime||/^text\/|json|xml|javascript|svg/i.test(mime)||/[^A-Za-z0-9+\/=_\s%-]/.test(s))plain=true;
       // 其它类型（如 image/png,%89PNG…）：先按用户可能漏写 ;base64 尝试，失败再回退到百分号解码
       else lenient=true;
