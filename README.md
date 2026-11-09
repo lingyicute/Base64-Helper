@@ -7,12 +7,13 @@ H5 Base64 Decoder & Encoder — 单文件、纯前端、数据不离开浏览器
 - 文本 ⇄ Base64（UTF-8），支持 URL 安全、无填充、76 列 MIME 换行
 - 文件 → Base64（可输出 Data URI），Base64 / Data URI → 文件（自动探测类型并预览）
 - 智能解码：自动识别 Data URI（含百分号编码形式，`base64` 标记可在任意参数位置）、PEM 封装（`-----BEGIN …`，块前后的说明文字与 PGP 装甲的 CRC 行会被忽略）、URL 安全字符、外层引号、空白与缺失的填充
+- 解码前还会剥离 JSON 字符串的转义（如 PHP `json_encode` 输出的 `\/`）、CSS `url(...)` 包装与漏写 `data:` 的 `base64,` 前缀；PEM 标签允许含连字符（如 `PRIVACY-ENHANCED MESSAGE`），折叠成多行的头部不会混入正文
 - 解码文件时以 Data URI 声明的类型修正容器格式的扩展名（docx / xlsx / epub / apk / odt 不再被保存成 zip，m4a、webm / ogg 音频同理）
-- 下载文件名会自动去除非法字符，并避开 Windows 保留设备名（如 `CON`、`NUL`）
+- 下载文件名会自动去除非法字符，避开 Windows 保留设备名（如 `CON`、`NUL`，含 `CON .txt`、`COM¹` 这类变体），并限制在 200 字节以内（保留扩展名）
 - 大数据在本地 Blob Worker 中处理，不阻塞界面
 - Material You 风格动态主题色，深色 / 浅色 / 跟随系统
 - 通过内置 CSP（`connect-src 'none'`）与 `no-referrer` 策略，从浏览器层面禁止页面发起网络请求，确保数据只在本地处理
-- 文件类型探测覆盖常见图片、音视频、压缩包、字体、可执行文件、WebAssembly 等格式
+- 文件类型探测覆盖常见图片、音视频、压缩包、字体、可执行文件、WebAssembly 等格式（含 Matroska / WebM、3GPP 的区分，以及无声明类型时的 HTML / XML 文本）
 - 超过 20 万字符的结果仅在文本框中预览前 20 万字符，复制与下载始终使用完整内容
 - 支持拖拽文件到页面任意位置，以及键盘操作（方向键切换分段按钮与标签页，Esc 关闭主题面板）
 
