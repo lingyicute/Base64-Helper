@@ -835,7 +835,7 @@ function extOf(m){
   if(sub.indexOf('+')>=0)sub=sub.slice(sub.lastIndexOf('+')+1);
   return sub.replace(/^x-/,'').replace(/[^a-z0-9]/g,'').slice(0,5)||'bin';
 }
-function kindOfMime(m){m=m.toLowerCase();if(m.startsWith('image/'))return'image';if(m.startsWith('audio/'))return'audio';if(m.startsWith('video/'))return'video';if(m.startsWith('text/')||/json|xml|javascript/.test(m))return'text';return'other'}
+function kindOfMime(m){m=m.toLowerCase();if(m.startsWith('image/'))return'image';if(m.startsWith('audio/'))return'audio';if(m.startsWith('video/'))return'video';if(m.startsWith('text/')||/(?:json|xml|javascript)$/.test(m))return'text';return'other'}
 function sniff(b){
   const n=b.length;
   const eq=(arr,off=0)=>n>=off+arr.length&&arr.every((v,i)=>b[off+i]===v);
