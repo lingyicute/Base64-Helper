@@ -821,7 +821,7 @@ function decodeB64(input){
 
 /* ============ 类型探测 ============ */
 const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg','image/x-icon':'ico','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/zip':'zip','application/json':'json','text/plain':'txt','text/html':'html','text/css':'css','text/csv':'csv','text/javascript':'js','application/javascript':'js','application/xml':'xml','text/xml':'xml','audio/mpeg':'mp3','audio/wav':'wav','audio/ogg':'ogg','audio/mp4':'m4a','video/mp4':'mp4','video/webm':'webm','application/gzip':'gz','image/heic':'heic','video/quicktime':'mov','audio/flac':'flac','font/woff2':'woff2','font/woff':'woff','application/octet-stream':'bin',
-  'image/jpg':'jpg','image/tiff':'tiff','image/vnd.microsoft.icon':'ico','audio/x-wav':'wav','audio/wave':'wav','audio/aac':'aac','audio/x-m4a':'m4a','audio/webm':'weba','audio/opus':'opus','audio/x-flac':'flac',
+  'image/jpg':'jpg','image/tiff':'tiff','image/vnd.microsoft.icon':'ico','audio/x-wav':'wav','audio/wave':'wav','audio/aac':'aac','audio/x-m4a':'m4a','audio/webm':'weba','audio/opus':'opus','audio/x-flac':'flac','application/x-bzip2':'bz2','application/x-xz':'xz','application/zstd':'zst','audio/midi':'mid','video/x-flv':'flv','application/x-javascript':'js','audio/mp3':'mp3','audio/x-mpeg':'mp3','image/x-png':'png','image/pjpeg':'jpg',
   'video/ogg':'ogv','video/x-matroska':'mkv','video/x-msvideo':'avi','video/3gpp':'3gp','application/x-zip-compressed':'zip','application/x-gzip':'gz','application/x-7z-compressed':'7z',
   'application/vnd.rar':'rar','application/x-rar-compressed':'rar','application/vnd.sqlite3':'sqlite','application/x-tar':'tar','font/ttf':'ttf','font/otf':'otf','application/wasm':'wasm','application/rtf':'rtf',
   'text/markdown':'md','application/yaml':'yaml','text/yaml':'yaml','application/msword':'doc','application/vnd.ms-excel':'xls','application/vnd.ms-powerpoint':'ppt',
@@ -848,7 +848,7 @@ function sniff(b){
   if(asc('RIFF')&&asc('WAVE',8))return T('audio/wav','wav','audio');
   if(asc('%PDF-'))return T('application/pdf','pdf','other');
   if(eq([0x49,0x49,0x2A,0x00])||eq([0x4D,0x4D,0x00,0x2A]))return T('image/tiff','tiff','image');
-  if(eq([0x00,0x00,0x01,0x00])&&n>22)return T('image/x-icon','ico','image');
+  if(eq([0x00,0x00,0x01,0x00])&&n>22&&(b[4]|(b[5]<<8))>0)return T('image/x-icon','ico','image');
   if(eq([0x42,0x4D])&&n>=26&&b[6]===0&&b[7]===0&&b[8]===0&&b[9]===0&&[12,40,52,56,64,108,124].includes((b[14]|(b[15]<<8)|(b[16]<<16)|(b[17]<<24))>>>0))return T('image/bmp','bmp','image');
   if(asc('RIFF')&&asc('AVI ',8))return T('video/x-msvideo','avi','video');
   if(n>=12&&asc('ftyp',4)){
@@ -874,6 +874,14 @@ function sniff(b){
   if(asc('wOF2'))return T('font/woff2','woff2','other');
   if(asc('wOFF'))return T('font/woff','woff','other');
   if(asc('SQLite format 3'))return T('application/vnd.sqlite3','sqlite','other');
+  if(eq([0x50,0x4B,0x05,0x06]))return T('application/zip','zip','other');
+  if(asc('BZh')&&b[3]>=0x31&&b[3]<=0x39&&eq([0x31,0x41,0x59,0x26,0x53,0x59],4))return T('application/x-bzip2','bz2','other');
+  if(eq([0xFD,0x37,0x7A,0x58,0x5A,0x00]))return T('application/x-xz','xz','other');
+  if(eq([0x28,0xB5,0x2F,0xFD]))return T('application/zstd','zst','other');
+  if(eq([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00]))return T('application/wasm','wasm','other');
+  if(asc('ustar',257))return T('application/x-tar','tar','other');
+  if(asc('MThd')&&n>=14&&b[4]===0&&b[5]===0&&b[6]===0&&b[7]===6)return T('audio/midi','mid','other');
+  if(asc('FLV')&&n>=9&&b[3]===1)return T('video/x-flv','flv','other');
   const head=new TextDecoder('utf-8').decode(b.subarray(0,512));
   if(/^\uFEFF?\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)?(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(head))return T('image/svg+xml','svg','image');
   return null;
