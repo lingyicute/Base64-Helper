@@ -708,6 +708,7 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const SVGNS='http://www.w3.org/2000/svg';
 const encoder=new TextEncoder();
 const PREVIEW_LIMIT=200000;
+const CLIP_NOTE='\n…（预览已截断，复制与下载将使用完整内容）';
 const opts={urlsafe:false,nopad:false,wrap:false,datauri:false};
 let fileMode='encode';
 
@@ -754,6 +755,13 @@ function setSupport(el,text,isError){
     state={span,error:isError};supportStates.set(el,state);
   }
   state.span.textContent=text;state.text=text;
+}
+// 超长文本只在 textarea 中显示前 PREVIEW_LIMIT 个字符，避免卡死界面；复制 / 下载仍使用完整内容
+function clipPreview(s){
+  if(s.length<=PREVIEW_LIMIT)return s;
+  let end=PREVIEW_LIMIT;const c=s.charCodeAt(end-1);
+  if(c>=0xD800&&c<=0xDBFF)end--;
+  return s.slice(0,end)+CLIP_NOTE;
 }
 function setFieldError(field,on){field.classList.toggle('error',!!on)}
 function setAttr(el,name,value){value=String(value);if(el.getAttribute(name)!==value)el.setAttribute(name,value)}
@@ -1193,17 +1201,19 @@ function runText(){
       clearPreview(textPreview);
       const {out,byteLength,inputChars}=result;
       setSupport(inSupport,fmtNum(inputChars)+' 字符 · '+fmtBytes(byteLength)+'（UTF-8）');
-      if(textOut.value!==out)textOut.value=out;
+      const shown=clipPreview(out);
+      if(textOut.value!==shown)textOut.value=shown;
       textState.out=out;
-      setSupport(outSupport,'Base64 长度 '+fmtNum(out.length)+' 字符'+(byteLength?' · 约为原始体积的 '+(out.length/byteLength).toFixed(2)+' 倍':''));
+      setSupport(outSupport,'Base64 长度 '+fmtNum(out.length)+' 字符'+(byteLength?' · 约为原始体积的 '+(out.length/byteLength).toFixed(2)+' 倍':'')+(out.length>PREVIEW_LIMIT?' · 预览已截断':''));
     }else{
       const {bytes,mime,info,inputChars,outputChars}=result;
       setSupport(inSupport,fmtNum(inputChars)+' 字符');
       textState.bytes=bytes;textState.info=info;
       if(info.text!==null){
-        if(textOut.value!==info.text)textOut.value=info.text;
+        const shown=clipPreview(info.text);
+        if(textOut.value!==shown)textOut.value=shown;
         textState.out=info.text;
-        setSupport(outSupport,'UTF-8 文本 · '+fmtNum(outputChars)+' 字符 · '+fmtBytes(bytes.length)+(mime?' · Data URI：'+mime:''));
+        setSupport(outSupport,'UTF-8 文本 · '+fmtNum(outputChars)+' 字符 · '+fmtBytes(bytes.length)+(mime?' · Data URI：'+mime:'')+(info.text.length>PREVIEW_LIMIT?' · 预览已截断':''));
       }else{
         textOut.value='';
         textOut.placeholder='解码结果是二进制数据（'+info.mime+'，'+fmtBytes(bytes.length)+'），无法以文本显示。可预览或下载为文件。';
@@ -1334,7 +1344,7 @@ function renderEnc(){
     enc.pending=false;setAttr(encField,'aria-busy',false);setFieldError(encField,false);
     const s=result.out;enc.out=s;
     const cut=s.length>PREVIEW_LIMIT;
-    const display=cut?s.slice(0,PREVIEW_LIMIT)+'\n…（预览已截断，复制与下载将使用完整内容）':s;
+    const display=clipPreview(s);
     if(encOut.value!==display)encOut.value=display;
     setSupport(encSupport,fmtNum(s.length)+' 字符 · 原始 '+fmtBytes(file.size)+(cut?' · 预览已截断':'')+(options.datauri?' · Data URI 使用标准 Base64（忽略其它格式选项）':''));
     encCopy.disabled=!s;encDownload.disabled=!s;
