@@ -4,6 +4,9 @@
   "description": "H5 Base64 Decoder & Encoder — 单文件、纯前端、数据不离开浏览器。",
   "private": true,
   "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test"
   }
