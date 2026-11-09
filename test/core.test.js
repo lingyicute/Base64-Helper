@@ -145,3 +145,10 @@ test('PEM：块前后可带说明文字，PGP 装甲的 CRC 行被忽略，标�
   assert.deepEqual(bytes(core.decodeB64(pgp)), Array.from(enc('ABC')));
   assert.throws(() => core.decodeB64('-----BEGIN A-----\nQUJD\n-----END B-----'), /标签不一致/);
 });
+
+test('解码：去掉外层引号，base64 标记可位于任意参数位置', () => {
+  assert.deepEqual(bytes(core.decodeB64('"QUJD"')), Array.from(enc('ABC')));
+  assert.deepEqual(bytes(core.decodeB64("'data:text/plain;base64,QUJD'")), Array.from(enc('ABC')));
+  assert.deepEqual(bytes(core.decodeB64('data:text/plain;base64;charset=utf-8,QUJD')), Array.from(enc('ABC')));
+  assert.deepEqual(bytes(core.decodeB64('data:text/plain;charset=utf-8,"x"')), Array.from(enc('"x"')));
+});
