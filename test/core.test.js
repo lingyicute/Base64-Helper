@@ -168,3 +168,9 @@ test('analyze：容器格式沿用声明的类型，文本类沿用声明的扩�
   assert.equal(core.analyze(enc('{"a":1}'), 'application/ld+json').ext, 'json');
   assert.equal(core.analyze(enc('hello'), 'application/pdf').mime, 'text/plain');
 });
+
+test('extOf：OpenDocument 与 jar', () => {
+  assert.equal(core.extOf('application/vnd.oasis.opendocument.text'), 'odt');
+  assert.equal(core.extOf('application/java-archive'), 'jar');
+  assert.equal(core.analyze(Uint8Array.of(0x50, 0x4b, 3, 4, 0, 0, 0, 0), 'application/vnd.oasis.opendocument.spreadsheet').ext, 'ods');
+});
