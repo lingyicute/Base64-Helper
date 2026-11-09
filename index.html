@@ -123,6 +123,7 @@ html.vt-theme::view-transition-new(root){
   transition:transform .2s var(--ease),outline-color .2s;outline:3px solid transparent;outline-offset:2px;
 }
 .swatch:hover{transform:scale(1.06)}
+.swatch:focus-visible,.swatch.picker:has(input:focus-visible){outline-color:var(--primary)}
 .swatch[aria-pressed=true],.swatch.picker.custom{outline-color:var(--primary)}
 .swatch .chk{width:24px;height:24px;border-radius:50%;background:var(--surface-container-high);color:var(--on-surface);display:grid;place-items:center;transform:scale(0);transition:transform .2s var(--ease)}
 .swatch .chk svg{width:16px;height:16px}
