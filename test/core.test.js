@@ -257,3 +257,12 @@ test('sniff：区分 Matroska 与 WebM，识别 3GPP；无声明类型的 HTML /
   assert.equal(core.analyze(enc('\u001b[31mred\u001b[0m'), null).mime, 'text/plain');
   assert.equal(core.analyze(Uint8Array.of(0, 1, 2), null).mime, 'application/octet-stream');
 });
+
+test('页面不引用任何外部资源（只有页脚的链接可以指向外部）', () => {
+  assert.match(html, /connect-src 'none'/);
+  const refs = html.match(/\s(?:src|href|action|poster|srcset)=["']?(?:https?:)?\/\/[^"'\s>]+/gi) || [];
+  assert.deepEqual(refs.filter((r) => !/^\s+href=/.test(r)), []);
+  assert.ok(!/<link[^>]+rel=["']?stylesheet/i.test(html));
+  assert.ok(!/<script[^>]+\ssrc=/i.test(html));
+  assert.ok(!/@import|url\(\s*["']?https?:/i.test(html));
+});
