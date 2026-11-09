@@ -1391,6 +1391,8 @@ function resetDecFile(){
 }
 function loadDecFile(file){
   resetDecFile();dec.srcName=file.name;dec.nameEdited=false;decIn.value='';
+  // 旧结果（含可能正在播放的音视频）在新文件读取期间不应继续显示
+  clearPreview(decPreview);decResult.hidden=true;setFieldError(decField,false);setSupport(decSupport,'');
   $('#decSrcName').textContent=file.name;$('#decSrcName').title=file.name;
   $('#decSrcMeta').textContent=fmtBytes(file.size)+' · 作为 Base64 文本读取';
   $('#decCard').hidden=false;
