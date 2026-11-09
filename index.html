@@ -727,7 +727,7 @@ async function copyText(t){
   try{await navigator.clipboard.writeText(t);return true}
   catch(e){
     const prev=document.activeElement,ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
-    document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}
+    document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);let ok=false;try{ok=document.execCommand('copy')}catch(_){}
     ta.remove();if(prev&&prev.focus)try{prev.focus({preventScroll:true})}catch(_){}
     return ok;
   }
