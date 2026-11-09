@@ -449,7 +449,8 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
     apply();
   }
   function random(){return oklchToHex(0.62,0.15,Math.random()*360)}
-  if(mq.addEventListener)mq.addEventListener('change',function(){if(state.mode==='auto')apply()});
+  var onSchemeChange=function(){if(state.mode==='auto')apply()};
+  if(mq.addEventListener)mq.addEventListener('change',onSchemeChange);else if(mq.addListener)mq.addListener(onSchemeChange);
   addEventListener('pagehide',persistSeed);
   document.addEventListener('visibilitychange',function(){if(document.hidden)persistSeed()});
   window.Theme={state:state,PRESETS:PRESETS,build:build,apply:apply,setMode:setMode,setSeed:setSeed,isDark:isDark,random:random,persistSeed:persistSeed};
