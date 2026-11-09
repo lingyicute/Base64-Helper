@@ -896,7 +896,7 @@ function decodeB64(input){
 /* ============ 类型探测 ============ */
 const EXT={'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg','image/x-icon':'ico','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/zip':'zip','application/json':'json','text/plain':'txt','text/html':'html','text/css':'css','text/csv':'csv','text/javascript':'js','application/javascript':'js','application/xml':'xml','text/xml':'xml','audio/mpeg':'mp3','audio/wav':'wav','audio/ogg':'ogg','audio/mp4':'m4a','video/mp4':'mp4','video/webm':'webm','application/gzip':'gz','image/heic':'heic','video/quicktime':'mov','audio/flac':'flac','font/woff2':'woff2','font/woff':'woff','application/octet-stream':'bin',
   'image/jpg':'jpg','image/tiff':'tiff','image/vnd.microsoft.icon':'ico','audio/x-wav':'wav','audio/wave':'wav','audio/aac':'aac','audio/x-m4a':'m4a','audio/webm':'weba','audio/opus':'opus','audio/x-flac':'flac','application/x-bzip2':'bz2','application/x-xz':'xz','application/zstd':'zst','audio/midi':'mid','video/x-flv':'flv','application/x-javascript':'js','audio/mp3':'mp3','audio/x-mpeg':'mp3','image/x-png':'png','image/pjpeg':'jpg',
-  'video/ogg':'ogv','video/x-matroska':'mkv','video/x-msvideo':'avi','video/3gpp':'3gp','application/x-zip-compressed':'zip','application/x-gzip':'gz','application/x-7z-compressed':'7z',
+  'video/ogg':'ogv','video/x-matroska':'mkv','video/x-msvideo':'avi','video/3gpp':'3gp','video/3gpp2':'3g2','application/x-zip-compressed':'zip','application/x-gzip':'gz','application/x-7z-compressed':'7z',
   'application/vnd.rar':'rar','application/x-rar-compressed':'rar','application/vnd.sqlite3':'sqlite','application/x-tar':'tar','font/ttf':'ttf','font/otf':'otf','application/wasm':'wasm','application/rtf':'rtf',
   'text/markdown':'md','application/yaml':'yaml','text/yaml':'yaml','application/msword':'doc','application/vnd.ms-excel':'xls','application/vnd.ms-powerpoint':'ppt',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
@@ -939,9 +939,12 @@ function sniff(b){
     if(/^(heic|heix|hevc|heim|heis|mif1|msf1)$/.test(brand))return T('image/heic','heic','image');
     if(/^M4[ABP]/.test(brand))return T('audio/mp4','m4a','audio');
     if(brand==='qt  ')return T('video/quicktime','mov','video');
+    if(/^3g2/.test(brand))return T('video/3gpp2','3g2','video');
+    if(/^3g/.test(brand))return T('video/3gpp','3gp','video');
     return T('video/mp4','mp4','video');
   }
-  if(eq([0x1A,0x45,0xDF,0xA3]))return T('video/webm','webm','video');
+  // EBML 头里的 DocType 区分 WebM 与 Matroska
+  if(eq([0x1A,0x45,0xDF,0xA3]))return String.fromCharCode(...b.subarray(4,64)).indexOf('matroska')>=0?T('video/x-matroska','mkv','video'):T('video/webm','webm','video');
   if(asc('OggS'))return T('audio/ogg','ogg','audio');
   if(asc('fLaC'))return T('audio/flac','flac','audio');
   if(asc('ID3')&&b[3]>=2&&b[3]<=4&&b[4]===0)return T('audio/mpeg','mp3','audio');
@@ -983,7 +986,8 @@ function tryUtf8(bytes){
   }
   try{
     const s=new TextDecoder(label,{fatal:true}).decode(bytes);
-    if(/[\u0000-\u0008\u000E-\u001F\u007F]/.test(s))return null;
+    // ESC（\u001B）常见于带 ANSI 颜色的终端日志，不视为二进制标志
+    if(/[\u0000-\u0008\u000E-\u001A\u001C-\u001F\u007F]/.test(s))return null;
     return s;
   }catch(e){return null}
 }
@@ -1008,6 +1012,9 @@ function analyze(bytes,hint){
       // 声明为文本类（含 +json / +xml 后缀）或 rtf / yaml 等纯文本格式时沿用声明的类型，保留正确的扩展名
       if(hint&&(kindOfMime(hint)==='text'||/^application\/(rtf|postscript|yaml|x-yaml|x-sh|sql|toml)$/.test(hint)))mime=hint;
       else if(/^\s*[\[{]/.test(text)&&text.length<2e6){try{JSON.parse(text);mime='application/json'}catch(e){}}
+      // 没有声明类型时，按开头识别 HTML / XML，保存时才会得到 .html / .xml
+      else if(/^\s*(?:<!doctype\s+html[\s>]|<html[\s>])/i.test(text.slice(0,512)))mime='text/html';
+      else if(/^\s*<\?xml[\s>]/i.test(text.slice(0,512)))mime='application/xml';
       t={mime,ext:extOf(mime),kind:'text'};
     }else if(hint){t={mime:hint,ext:extOf(hint),kind:kindOfMime(hint)}}
     else t={mime:'application/octet-stream',ext:'bin',kind:'other'};
