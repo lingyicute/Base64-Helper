@@ -18,10 +18,11 @@ const source = [
   "const CLIP_NOTE='\\n…（预览已截断，复制与下载将使用完整内容）';",
   between('function fmtBytes', 'const numberFormatter'),
   between('function countChars', 'let snT;'),
+  between('function safeFileName', 'const supportStates'),
   between('// 截取前 n 个 UTF-16 单元', 'function setFieldError'),
   between('/* ============ Base64 核心', '/* Large inputs'),
   between('function computeTask', 'const WORKER_THRESHOLD'),
-  'return {fmtBytes,sliceSafe,clipPreview,bytesToB64,formatB64,percentToBytes,b64PayloadToBytes,decodeB64,extOf,kindOfMime,sniff,tryUtf8,analyze,computeTask,EXT};',
+  'return {safeFileName,fmtBytes,sliceSafe,clipPreview,bytesToB64,formatB64,percentToBytes,b64PayloadToBytes,decodeB64,extOf,kindOfMime,sniff,tryUtf8,analyze,computeTask,EXT};',
 ].join('\n');
 
 const core = new Function(source)();
@@ -173,4 +174,13 @@ test('extOf：OpenDocument 与 jar', () => {
   assert.equal(core.extOf('application/vnd.oasis.opendocument.text'), 'odt');
   assert.equal(core.extOf('application/java-archive'), 'jar');
   assert.equal(core.analyze(Uint8Array.of(0x50, 0x4b, 3, 4, 0, 0, 0, 0), 'application/vnd.oasis.opendocument.spreadsheet').ext, 'ods');
+});
+
+test('safeFileName：非法字符、结尾点与 Windows 设备名', () => {
+  assert.equal(core.safeFileName(' a/b\\c:d?.png ', 'x'), 'a_b_c_d_.png');
+  assert.equal(core.safeFileName('report.', 'x'), 'report');
+  assert.equal(core.safeFileName('..  ', 'decoded.bin'), 'decoded.bin');
+  assert.equal(core.safeFileName('NUL.txt', 'x'), '_NUL.txt');
+  assert.equal(core.safeFileName('com1', 'x'), '_com1');
+  assert.equal(core.safeFileName('console.log', 'x'), 'console.log');
 });
