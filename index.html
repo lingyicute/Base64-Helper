@@ -535,7 +535,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
   </div>
   <div class="hex-row">
     <div class="field outlined sm" id="hexField" style="--card-bg:var(--surface-container-high)">
-      <input type="text" id="hexInput" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#6750A4" aria-label="HEX 颜色值">
+      <input type="text" id="hexInput" maxlength="7" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="#6750A4" aria-label="HEX 颜色值">
       <label for="hexInput">HEX 颜色</label>
     </div>
     <button class="btn tonal has-icon" id="btnRandom" type="button"><svg class="i" aria-hidden="true"><use href="#i-shuffle"/></svg>随机</button>
@@ -580,7 +580,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
     <div class="io-grid">
       <div class="io-col">
         <div class="field outlined" id="inField">
-          <textarea id="textIn" spellcheck="false" autocomplete="off" placeholder="在此输入要编码的文本…"></textarea>
+          <textarea id="textIn" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="在此输入要编码的文本…"></textarea>
           <label for="textIn" id="inLabel">输入 · 文本</label>
         </div>
         <div class="support" id="inSupport" aria-live="polite">0 字符 · 0 B</div>
@@ -662,7 +662,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
       </div>
       <div class="progress" id="decProgress" hidden><i></i></div>
       <div class="field outlined" id="decField">
-        <textarea id="decIn" class="mono" spellcheck="false" autocomplete="off" placeholder="在此粘贴 Base64 字符串或 data:image/png;base64,… 形式的 Data URI" style="min-height:160px"></textarea>
+        <textarea id="decIn" class="mono" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="在此粘贴 Base64 字符串或 data:image/png;base64,… 形式的 Data URI" style="min-height:160px"></textarea>
         <label for="decIn">或粘贴 · Base64 / Data URI</label>
       </div>
       <div class="support" id="decSupport" aria-live="polite"></div>
@@ -674,7 +674,7 @@ footer .eyebrow{background:var(--surface-container-high);color:var(--on-surface-
         <div class="preview" id="decPreview"></div>
         <div class="rc-actions">
           <div class="field outlined sm">
-            <input type="text" id="decName" spellcheck="false" autocomplete="off">
+            <input type="text" id="decName" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">
             <label for="decName">保存文件名</label>
           </div>
           <button class="btn filled has-icon" id="decDownload" type="button"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>下载文件</button>
